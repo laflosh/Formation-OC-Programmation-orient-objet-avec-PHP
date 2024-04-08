@@ -1,80 +1,69 @@
 <?php
 
-const RESULT_WINNER = 1;
-const RESULT_LOSER = -1;
-const RESULT_DRAW = 0;
-const RESULT_POSSIBILITIES = [RESULT_WINNER, RESULT_LOSER, RESULT_DRAW];
-
 class Encounter {
 
-    private int $player1;
-    private int $player2;
+    public const RESULT_WINNER = 1;
+    public const RESULT_LOSER = -1;
+    public const RESULT_DRAW = 0;
+    public const RESULT_POSSIBILITIES = [self::RESULT_WINNER, self::RESULT_LOSER, self::RESULT_DRAW];
 
-    public function getScorePlayer1() : int {
-        return $this->player1;
-    }
-
-    public function getScorePlayer2() : int {
-        return $this->player2;
-    }
-
-    public function setScorePlayer1(int $score) : void {
-
-        if($score < 0 ){
-            trigger_error("Score non valide");
-        }
-
-        $this->player1 = $score;
-
-    }
-
-    public function setScorePlayer2(int $score) : void {
-        
-        if($score < 0 ){
-            trigger_error("Score non valide");
-        }
-
-        $this->player2 = $score;
-
-    }
-
-    public function probabilityAgainst(int $levelPlayerOne, int $againstLevelPlayerTwo)
+    public static function probabilityAgainst(Player $playerOne, Player $playerTwo)
     {
-        return 1/(1+(10 ** (($againstLevelPlayerTwo - $levelPlayerOne)/400)));
+        return 1/(1+(10 ** (($playerTwo->level - $playerOne->level)/400)));
     }
 
-    public function setNewLevel(int &$levelPlayerOne, int $againstLevelPlayerTwo, int $playerOneResult)
+    public static function setNewLevel(Player $playerOne, Player $playerTwo, int $playerOneResult)
     {
-        if (!in_array($playerOneResult, RESULT_POSSIBILITIES)) {
-            trigger_error(sprintf('Invalid result. Expected %s',implode(' or ', RESULT_POSSIBILITIES)));
+        if (!in_array($playerOneResult, self::RESULT_POSSIBILITIES)) {
+            trigger_error(sprintf('Invalid result. Expected %s',implode(' or ', self::RESULT_POSSIBILITIES)));
         }
 
-        $levelPlayerOne += (int) (32 * ($playerOneResult - $this->probabilityAgainst($levelPlayerOne, $againstLevelPlayerTwo)));
+        $playerOne->level += (int) (32 * ($playerOneResult - self::probabilityAgainst($playerOne, $playerTwo)));
     }
 
 }
 
-$match = new Encounter();
-//Initiation du score
-$match->setScorePlayer1(400);
-$match->setScorePlayer2(800);
+class Player {
 
-$greg = $match->getScorePlayer1();
-$jade = $match->getScorePlayer2();
+    public int $level;
+
+    public function getLevelPlayer() : int {
+        return $this->level;
+    }
+
+    public function setLevelPlayer(int $level) : void {
+
+        if($level < 0 ){
+            trigger_error("Score non valide");
+        }
+
+        $this->level = $level;
+
+    }
+
+}
+
+
+//Initiation du score
+$greg = new Player();
+$jade = new Player();
+
+$greg->setLevelPlayer(400);
+$jade->setLevelPlayer(800);
 
 echo sprintf(
     'Greg à %.2f%% chance de gagner face a Jade',
-    $match->probabilityAgainst($greg, $jade)*100
+    Encounter::probabilityAgainst($greg, $jade)*100
 ).PHP_EOL;
 
 // Imaginons que greg l'emporte tout de même.
-$match->setNewLevel($greg, $jade, RESULT_WINNER);
-$match->setNewLevel($greg, $jade, RESULT_LOSER);
+Encounter::setNewLevel($greg, $jade, Encounter::RESULT_WINNER);
+Encounter::setNewLevel($greg, $jade, Encounter::RESULT_LOSER);
 
 echo sprintf(
     'les niveaux des joueurs ont évolués vers %s pour Greg et %s pour Jade',
-    $greg,
-    $jade
+    $greg->level,
+    $jade->level
 );
 
 exit(0);
