@@ -14,7 +14,7 @@ abstract class AbstractPlayer implements PlayerInterface{
 
     abstract public function getRatio() : float;
 
-    abstract protected function probabilityAgainst(self $player) : float;
+    abstract protected function probabilityAgainst(PlayerInterface $player) : float;
 
     abstract public function updateRatioAgainst(PlayerInterface $player, int $result) : void;
 
