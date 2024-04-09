@@ -16,13 +16,13 @@ class Player extends AbstractPlayer {
 
     }
 
-    public function probabilityAgainst(AbstractPlayer $player) : float{
+    public function probabilityAgainst(PlayerInterface  $player) : float{
 
         return 1/(1+(10 ** (($player->getRatio() - $player->getRatio())/400)));
 
     }
 
-    public function updateRatioAgainst(AbstractPlayer $player, int $result) : void {
+    public function updateRatioAgainst(PlayerInterface  $player, int $result) : void {
 
         $this->ratio += 32 * ($result - $this->probabilityAgainst($player));
 
