@@ -2,37 +2,44 @@
 
 declare(strict_types=1);
 
-class Lobby {
+namespace App\MatchMaker {
 
-    /** @var array<QueuingPlayer> */
-    public array $queuingPlayers = [];
+    use App\MatchMaker\Player\Player;
+    use App\MatchMaker\Player\QueuingPlayer;
 
-    public function findOpenents(QueuingPlayer $player) : array {
+    class Lobby {
 
-        $minLevel = round($player->getRatio() / 100);
-        $maxLevel = $minLevel + $player->getRange();
+        /** @var array<QueuingPlayer> */
+        public array $queuingPlayers = [];
 
-        return array_filter($this->queuingPlayers, static function (QueuingPlayer $potentialOponent) use ($minLevel, $maxLevel, $player) 
-        {
-            $playerLevel = round($potentialOponent->getRatio() / 100);
+        public function findOpenents(QueuingPlayer $player) : array {
 
-            return $player !== $potentialOponent && ($minLevel <= $playerLevel) && ($playerLevel <= $maxLevel);
+            $minLevel = round($player->getRatio() / 100);
+            $maxLevel = $minLevel + $player->getRange();
 
-        });
+            return array_filter($this->queuingPlayers, static function (QueuingPlayer $potentialOponent) use ($minLevel, $maxLevel, $player) 
+            {
+                $playerLevel = round($potentialOponent->getRatio() / 100);
 
-    }
+                return $player !== $potentialOponent && ($minLevel <= $playerLevel) && ($playerLevel <= $maxLevel);
 
-    public function addPlayer(Player $player) : void {
+            });
 
-        $this->queuingPlayers[] = new QueuingPlayer($player);
+        }
 
-    }
+        public function addPlayer(Player $player) : void {
 
-    public function addPlayers(Player ...$players) : void {
+            $this->queuingPlayers[] = new QueuingPlayer($player);
 
-        foreach($players as $player) {
+        }
 
-            $this->addPlayer($player);
+        public function addPlayers(Player ...$players) : void {
+
+            foreach($players as $player) {
+
+                $this->addPlayer($player);
+
+            }
 
         }
 
@@ -40,96 +47,90 @@ class Lobby {
 
 }
 
-abstract class AbstractPlayer {
+namespace App\MatchMaker\Player{
 
-    public function __construct(public string $name = "anonymous", public float $ratio = 400.0){
+    abstract class AbstractPlayer {
 
-    }
+        public function __construct(public string $name = "anonymous", public float $ratio = 400.0){
 
-    abstract public function getName() : string;
+        }
 
-    abstract public function getRatio() : float;
+        abstract public function getName() : string;
 
-    abstract protected function probabilityAgainst(self $player) : float;
+        abstract public function getRatio() : float;
 
-    abstract public function updateRatioAgainst(self $player, int $result) : void;
+        abstract protected function probabilityAgainst(self $player) : float;
 
-}
-
-class Player extends AbstractPlayer {
-
-    public function getName() : string {
-
-        return $this->name;
+        abstract public function updateRatioAgainst(self $player, int $result) : void;
 
     }
 
-    public function getRatio() : float {
+    class Player extends AbstractPlayer {
 
-        return $this->ratio;
+        public function getName() : string {
 
-    }
+            return $this->name;
 
-    public function probabilityAgainst(AbstractPlayer $player) : float{
+        }
 
-        return 1/(1+(10 ** (($player->getRatio() - $player->getRatio())/400)));
+        public function getRatio() : float {
 
-    }
+            return $this->ratio;
 
-    public function updateRatioAgainst(AbstractPlayer $player, int $result) : void {
+        }
 
-        $this->ratio += 32 * ($result - $this->probabilityAgainst($player));
+        public function probabilityAgainst(AbstractPlayer $player) : float{
 
-    }
+            return 1/(1+(10 ** (($player->getRatio() - $player->getRatio())/400)));
 
-}
+        }
 
-class QueuingPlayer extends Player {
+        public function updateRatioAgainst(AbstractPlayer $player, int $result) : void {
 
-    public function __construct(AbstractPlayer $player , protected int $range = 1){
+            $this->ratio += 32 * ($result - $this->probabilityAgainst($player));
 
-        parent::__construct($player->getName(), $player->getRatio());
-
-    }
-
-    public function getRange() : int{
-
-        return $this->range;
+        }
 
     }
 
-    public function upgradeRange() : void{
+    class QueuingPlayer extends Player {
 
-        $this->range = min($this->range + 1, 40);
+        public function __construct(AbstractPlayer $player , protected int $range = 1){
 
-    }
+            parent::__construct($player->getName(), $player->getRatio());
 
-}
+        }
 
-class BlitzPlayer extends Player {
+        public function getRange() : int{
 
-    public function __construct(public string $name = "anonymous", public float $ratio = 1200.0){
+            return $this->range;
 
-        parent::__construct($name, $ratio);
+        }
 
-    }
+        public function upgradeRange() : void{
 
-    public function updateRatioAgainst(AbstractPlayer $player, int $result) : void {
+            $this->range = min($this->range + 1, 40);
 
-        $this->ratio += 128 * ($result - $this->probabilityAgainst($player));
+        }
 
     }
 
 }
-
 
 //Initiation du score
-$greg = new BlitzPlayer("greg", 400);
-$jade = new BlitzPlayer("jade", 4760);
+namespace {
 
-$lobby = new Lobby();
-$lobby->addPlayers($greg, $jade);
+    use App\MatchMaker\Lobby;
+    use App\MatchMaker\Player\Player;
 
-var_dump($lobby->findOpenents($lobby->queuingPlayers[0]));
+    $greg = new Player("greg", 400);
+    $jade = new Player("jade", 476);
 
-exit(0);
+    $lobby = new Lobby();
+    $lobby->addPlayers($greg, $jade);
+
+    var_dump($lobby->findOpenents($lobby->queuingPlayers[0]));
+
+    exit(0);
+
+}
